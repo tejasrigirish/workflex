@@ -236,7 +236,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenP
             </button>
 
             {isNotificationsOpen && (
-              <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-[#111827] border border-[#1F293D] rounded-2xl shadow-2xl p-4 text-slate-100 z-50 animate-in fade-in duration-150">
+              <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] sm:w-96 bg-[#111827] border border-[#1F293D] rounded-2xl shadow-2xl p-4 text-slate-100 z-50 animate-in fade-in duration-150">
                 <div className="flex items-center justify-between pb-3 border-b border-[#1F293D]">
                   <div className="flex items-center gap-2">
                     <h4 className="text-xs font-bold text-white uppercase tracking-wider">

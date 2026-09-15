@@ -11,11 +11,11 @@ export const MobileNav: React.FC<MobileNavProps> = ({ currentView, onNavigate })
   const { applications } = useJobs();
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0B0F17]/95 backdrop-blur-xl border-t border-[#1F293D] py-2 px-3">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0B0F17]/95 backdrop-blur-xl border-t border-[#1F293D] pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] px-3 shadow-2xl">
       <div className="flex items-center justify-around">
         <button
           onClick={() => onNavigate('landing')}
-          className={`flex flex-col items-center gap-1 p-1 transition cursor-pointer ${
+          className={`flex flex-col items-center justify-center min-h-[44px] min-w-[48px] gap-1 p-1 transition cursor-pointer active:scale-95 ${
             currentView === 'landing' ? 'text-[#BAE6FD] font-bold' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -25,7 +25,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ currentView, onNavigate })
 
         <button
           onClick={() => onNavigate('discover')}
-          className={`flex flex-col items-center gap-1 p-1 transition cursor-pointer ${
+          className={`flex flex-col items-center justify-center min-h-[44px] min-w-[48px] gap-1 p-1 transition cursor-pointer active:scale-95 ${
             currentView === 'discover' ? 'text-[#BAE6FD] font-bold' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -35,7 +35,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ currentView, onNavigate })
 
         <button
           onClick={() => onNavigate('discover-map')}
-          className={`flex flex-col items-center gap-1 p-1 transition cursor-pointer ${
+          className={`flex flex-col items-center justify-center min-h-[44px] min-w-[48px] gap-1 p-1 transition cursor-pointer active:scale-95 ${
             currentView === 'discover-map' ? 'text-[#BAE6FD] font-bold' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -45,20 +45,20 @@ export const MobileNav: React.FC<MobileNavProps> = ({ currentView, onNavigate })
 
         <button
           onClick={() => onNavigate('applications')}
-          className={`relative flex flex-col items-center gap-1 p-1 transition cursor-pointer ${
+          className={`relative flex flex-col items-center justify-center min-h-[44px] min-w-[48px] gap-1 p-1 transition cursor-pointer active:scale-95 ${
             currentView === 'applications' ? 'text-[#BAE6FD] font-bold' : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           <Briefcase className="w-5 h-5" />
           <span className="text-[10px]">Applied</span>
           {applications.length > 0 && (
-            <span className="absolute -top-0.5 right-1 w-2 h-2 rounded-full bg-[#BAE6FD]" />
+            <span className="absolute 1 right-2 w-2 h-2 rounded-full bg-[#BAE6FD]" />
           )}
         </button>
 
         <button
           onClick={() => onNavigate('profile')}
-          className={`flex flex-col items-center gap-1 p-1 transition cursor-pointer ${
+          className={`flex flex-col items-center justify-center min-h-[44px] min-w-[48px] gap-1 p-1 transition cursor-pointer active:scale-95 ${
             currentView === 'profile' ? 'text-[#BAE6FD] font-bold' : 'text-slate-400 hover:text-slate-200'
           }`}
         >

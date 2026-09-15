@@ -12,9 +12,14 @@ export const CustomCursor: React.FC = () => {
   const requestRef = useRef<number | null>(null);
 
   useEffect(() => {
-    // Check user preference
+    // Check user preference or touch device
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) return;
+    const isTouchDevice =
+      window.matchMedia('(hover: none) and (pointer: coarse)').matches ||
+      'ontouchstart' in window ||
+      (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0);
+
+    if (prefersReducedMotion || isTouchDevice) return;
 
     const onMouseMove = (e: MouseEvent) => {
       setIsVisible(true);

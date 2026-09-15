@@ -47,7 +47,8 @@ export const MagneticBackground: React.FC = () => {
     let animId: number;
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const isMobile = width < 768;
+    const dpr = isMobile ? 1 : Math.min(window.devicePixelRatio || 1, 2);
 
     canvas.width = width * dpr;
     canvas.height = height * dpr;
@@ -217,13 +218,15 @@ export const MagneticBackground: React.FC = () => {
     const handleResize = () => {
       width = window.innerWidth;
       height = window.innerHeight;
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-      ctx.scale(dpr, dpr);
+      const currentDpr = width < 768 ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = width * currentDpr;
+      canvas.height = height * currentDpr;
+      ctx.scale(currentDpr, currentDpr);
 
       const minDim = Math.min(width, height);
       blobs.forEach((b, idx) => {
-        b.baseRadius = minDim * blobConfigs[idx].radiusRatio;
+        const scaleMod = width < 640 ? 0.8 : 1;
+        b.baseRadius = minDim * blobConfigs[idx].radiusRatio * scaleMod;
       });
     };
 

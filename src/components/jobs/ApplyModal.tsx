@@ -48,8 +48,8 @@ export const ApplyModal: React.FC<ApplyModalProps> = ({ job, onClose, onSuccess 
   const paymentFormatted = `₹${job.paymentAmount.toLocaleString('en-IN')}`;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg bg-[#111827] border border-[#1F293D] rounded-2xl shadow-2xl p-6 text-slate-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+      <div className="relative w-full max-w-lg bg-[#111827] border border-[#1F293D] rounded-2xl shadow-2xl p-5 sm:p-6 text-slate-100 max-h-[90dvh] overflow-y-auto my-auto">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition"

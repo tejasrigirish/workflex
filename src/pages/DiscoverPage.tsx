@@ -84,7 +84,7 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
       </div>
 
       {/* Main Split-Screen Workspace */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 min-h-[480px] lg:min-h-[600px] h-[calc(100vh-230px)]">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 min-h-[440px] sm:min-h-[480px] lg:min-h-[600px] h-[calc(100dvh-230px)] sm:h-[calc(100dvh-200px)] lg:h-[calc(100vh-210px)]">
         {/* Left Side: Interactive Map (Hidden on mobile if 'list' is selected) */}
         <div
           className={`lg:col-span-6 xl:col-span-7 h-full rounded-2xl overflow-hidden border border-[#1F293D] shadow-xl ${

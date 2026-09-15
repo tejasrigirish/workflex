@@ -82,7 +82,7 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ job, onClose, 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-150">
-      <div className="relative w-full max-w-3xl bg-[#111827] border border-[#1F293D] rounded-2xl shadow-2xl overflow-hidden my-auto text-slate-100 max-h-[92vh] flex flex-col">
+      <div className="relative w-full max-w-3xl bg-[#111827] border border-[#1F293D] rounded-2xl shadow-2xl overflow-hidden my-auto text-slate-100 max-h-[90dvh] sm:max-h-[92vh] flex flex-col">
         {/* Modal Top Nav Bar */}
         <div className="flex items-center justify-between p-4 border-b border-[#1F293D] bg-[#0B0F17]/80 backdrop-blur-md shrink-0">
           <div className="flex items-center gap-2">
@@ -378,7 +378,7 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ job, onClose, 
         </div>
 
         {/* Modal Sticky Bottom Action Bar */}
-        <div className="p-4 border-t border-[#1F293D] bg-[#0B0F17] shrink-0 flex items-center justify-between gap-4">
+        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-4 border-t border-[#1F293D] bg-[#0B0F17] shrink-0 flex items-center justify-between gap-4">
           <div>
             <span className="text-[11px] text-slate-400 uppercase tracking-wider block">
               Direct Payout

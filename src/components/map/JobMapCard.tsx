@@ -10,7 +10,7 @@ interface JobMapCardProps {
 
 export const JobMapCard: React.FC<JobMapCardProps> = ({ job, onViewDetails, onClose }) => {
   return (
-    <div className="w-72 glass-card-static rounded-2xl overflow-hidden shadow-2xl text-slate-100 p-3 relative border border-white/10">
+    <div className="w-72 max-w-[calc(100vw-3rem)] glass-card-static rounded-2xl overflow-hidden shadow-2xl text-slate-100 p-3 relative border border-white/10">
       {/* Header image & price pill */}
       <div className="relative h-28 w-full rounded-xl overflow-hidden mb-2.5">
         <img

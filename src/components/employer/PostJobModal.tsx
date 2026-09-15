@@ -227,7 +227,7 @@ export const PostJobModal: React.FC<PostJobModalProps> = ({ onClose, onSuccess }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
-      <div className="relative w-full max-w-3xl bg-[#0D121D] border border-slate-700/60 rounded-3xl shadow-2xl p-6 sm:p-8 text-slate-100 max-h-[92vh] flex flex-col">
+      <div className="relative w-full max-w-3xl bg-[#0D121D] border border-slate-700/60 rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-8 text-slate-100 max-h-[90dvh] sm:max-h-[92vh] my-auto flex flex-col">
         {/* Top Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
