@@ -47,18 +47,11 @@ const MainAppContent: React.FC = () => {
     updateFilter,
   } = useJobs();
 
-  // If user is not logged in and not guest exploring, show mandatory AuthGate
-  if (!isAuthenticated && !isGuestExploring) {
-    return <AuthGate />;
-  }
-
-  // Navigation view state
+  // Navigation view state - MUST be declared unconditionally at the top
   const [currentView, setCurrentView] = useState<string>(
     role === 'employer' ? 'employer' : 'discover'
   );
   const [isPostJobModalOpen, setIsPostJobModalOpen] = useState<boolean>(false);
-
-  const savedJobs = (jobs || []).filter((j) => j && (savedJobIds || []).includes(j.id));
 
   // Intent resume and Role-based redirection upon login
   React.useEffect(() => {
@@ -102,6 +95,14 @@ const MainAppContent: React.FC = () => {
       }
     }
   }, [currentView, role, isAuthenticated]);
+
+  // If user is not logged in and not guest exploring, show mandatory AuthGate
+  if (!isAuthenticated && !isGuestExploring) {
+    return <AuthGate />;
+  }
+
+  const savedJobs = (jobs || []).filter((j) => j && (savedJobIds || []).includes(j.id));
+
 
   const handleOpenPostJob = () => {
     if (!isAuthenticated) {
