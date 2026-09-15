@@ -57,14 +57,15 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
   const studentName = user?.name || 'Student';
 
   // Recommended jobs for student (strictly open/active jobs only)
-  const cityJobs = filteredJobs.filter(
+  const cityJobs = (filteredJobs || []).filter(
     (j) =>
-      !filters.city ||
-      filters.city === 'All Cities' ||
-      (j.city && j.city.toLowerCase() === filters.city.toLowerCase()) ||
-      (j.businessAddress && j.businessAddress.toLowerCase().includes(filters.city.toLowerCase()))
+      Boolean(j) &&
+      (!filters?.city ||
+        filters.city === 'All Cities' ||
+        (j.city && typeof j.city === 'string' && j.city.toLowerCase() === (filters.city || '').toLowerCase()) ||
+        (j.businessAddress && typeof j.businessAddress === 'string' && j.businessAddress.toLowerCase().includes((filters.city || '').toLowerCase())))
   );
-  const recommendedJobs = (cityJobs.length > 0 ? cityJobs : filteredJobs).slice(0, 4);
+  const recommendedJobs = (cityJobs.length > 0 ? cityJobs : (filteredJobs || [])).slice(0, 4);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8 text-slate-100">
@@ -183,7 +184,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             Completed Gigs
           </span>
           <div className="text-xl sm:text-2xl font-black text-cyan-400 mt-1">
-            {applications.filter((a) => a.status === 'completed').length}
+            {(applications || []).filter((a) => a?.status === 'completed').length}
           </div>
         </div>
 
@@ -199,7 +200,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({
             Total Earned
           </span>
           <div className="text-xl sm:text-2xl font-black text-cyan-400 mt-1">
-            ₹{totalEarnings.toLocaleString('en-IN')}
+            ₹{(totalEarnings || 0).toLocaleString('en-IN')}
           </div>
         </div>
       </div>

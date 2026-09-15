@@ -8,7 +8,14 @@ import { api, ApiJob, ApiApplication, ApiShift } from '../api/client';
 import { CITY_COORDINATES } from '../components/map/JobMap';
 
 export function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  if (!lat1 || !lon1 || !lat2 || !lon2) return 1.5;
+  if (
+    typeof lat1 !== 'number' || typeof lon1 !== 'number' ||
+    typeof lat2 !== 'number' || typeof lon2 !== 'number' ||
+    isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) ||
+    !lat1 || !lon1 || !lat2 || !lon2
+  ) {
+    return 1.5;
+  }
   const R = 6371; // km
   const dLat = (lat2 - lat1) * (Math.PI / 180);
   const dLon = (lon2 - lon1) * (Math.PI / 180);
@@ -80,48 +87,49 @@ interface JobContextType {
 const JobContext = createContext<JobContextType | undefined>(undefined);
 
 function mapApiJobToJobListing(apiJob: ApiJob): JobListing {
+  const salaryVal = Number(apiJob.salary) || 0;
   return {
-    id: apiJob.id,
-    title: apiJob.title,
-    businessName: apiJob.businessName,
-    employerId: apiJob.employerId,
-    employerName: apiJob.businessName,
+    id: apiJob.id || `job_${Math.random()}`,
+    title: apiJob.title || 'Flexible Shift',
+    businessName: apiJob.businessName || 'Local Business',
+    employerId: apiJob.employerId || '',
+    employerName: apiJob.businessName || 'Verified Employer',
     employerPhone: '9845012345',
-    isVerifiedBusiness: apiJob.isVerifiedBusiness,
-    businessDescription: apiJob.description,
-    businessAddress: apiJob.address,
-    city: apiJob.city,
+    isVerifiedBusiness: !!apiJob.isVerifiedBusiness,
+    businessDescription: apiJob.description || '',
+    businessAddress: apiJob.address || `${apiJob.city || 'Bengaluru'}, India`,
+    city: apiJob.city || 'Bengaluru',
     coordinates: {
-      lat: apiJob.latitude,
-      lng: apiJob.longitude,
+      lat: Number(apiJob.latitude) || 12.9716,
+      lng: Number(apiJob.longitude) || 77.5946,
     },
-    category: apiJob.category as any,
+    category: (apiJob.category || 'Retail') as any,
     workType: 'part_time',
-    paymentAmount: apiJob.salary,
+    paymentAmount: salaryVal,
     paymentType: apiJob.salaryType === 'hourly' ? 'per_hour' : 'per_day',
     duration: 'few_hours',
-    durationText: apiJob.durationText || `${apiJob.startTime} - ${apiJob.endTime}`,
+    durationText: apiJob.durationText || `${apiJob.startTime || '05:00 PM'} - ${apiJob.endTime || '09:00 PM'}`,
     timing: 'evening',
     workingHoursText: apiJob.workingHoursText || '4 Hours/Shift',
     startDate: apiJob.date || 'Flexible',
-    shortDescription: apiJob.shortDescription,
-    fullDescription: apiJob.fullDescription,
-    responsibilities: apiJob.responsibilities || [],
-    requiredSkills: apiJob.requiredSkills || [],
-    workersNeeded: apiJob.numberOfWorkers || 1,
+    shortDescription: apiJob.shortDescription || apiJob.description || 'Flexible part-time shift.',
+    fullDescription: apiJob.fullDescription || apiJob.description || 'Flexible part-time shift with verified direct payment.',
+    responsibilities: Array.isArray(apiJob.responsibilities) ? apiJob.responsibilities : [],
+    requiredSkills: Array.isArray(apiJob.requiredSkills) ? apiJob.requiredSkills : [],
+    workersNeeded: Number(apiJob.numberOfWorkers) || 1,
     workersSelected: 0,
     workplaceImages: apiJob.workplacePhotos || (apiJob.photoUrl ? [apiJob.photoUrl] : []),
     postedDate: apiJob.postedDate || 'Today',
     status: (apiJob.status === 'open' ? 'active' : apiJob.status || 'active') as 'active' | 'filled' | 'completed' | 'cancelled',
     payment: {
-      amount: apiJob.salary,
+      amount: salaryVal,
       frequency: apiJob.salaryType === 'hourly' ? 'hourly' : 'daily',
       currency: '₹',
       isNegotiable: false,
     },
-    locality: apiJob.locality,
-    address: apiJob.address,
-    businessType: apiJob.businessType,
+    locality: apiJob.locality || apiJob.city || 'Bengaluru',
+    address: apiJob.address || `${apiJob.city || 'Bengaluru'}, India`,
+    businessType: apiJob.businessType || 'Local Store',
   };
 }
 
@@ -155,8 +163,12 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [shifts, setShifts] = useState<ApiShift[]>([]);
   const [savedJobIds, setSavedJobIds] = useState<string[]>(() => {
-    const saved = localStorage.getItem('workflex_saved_jobs');
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem('workflex_saved_jobs');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
   });
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
@@ -168,7 +180,9 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Save saved job IDs to local storage
   useEffect(() => {
-    localStorage.setItem('workflex_saved_jobs', JSON.stringify(savedJobIds));
+    try {
+      localStorage.setItem('workflex_saved_jobs', JSON.stringify(savedJobIds));
+    } catch {}
   }, [savedJobIds]);
 
   // Fetch real data from SQLite backend
@@ -224,24 +238,42 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Earning records computed purely from real completed shifts
   const earnings: EarningRecord[] = useMemo(() => {
-    return shifts.map(s => ({
-      id: s.id,
-      jobId: s.job_id,
-      jobTitle: s.job_title || 'Completed Shift',
-      businessName: s.business_name || 'Verified Employer',
-      amount: s.amount,
-      completedDate: new Date(s.completed_at).toLocaleDateString('en-IN', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      }),
-      status: 'paid',
-      receiptNumber: `RCP-${s.id.slice(-6).toUpperCase()}`,
-    }));
+    try {
+      return (shifts || []).map(s => {
+        if (!s) return null;
+        let formattedDate = 'Recent';
+        if (s.completed_at) {
+          const d = new Date(s.completed_at);
+          if (!isNaN(d.getTime())) {
+            formattedDate = d.toLocaleDateString('en-IN', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            });
+          }
+        }
+        return {
+          id: s.id || `shift_${Math.random()}`,
+          jobId: s.job_id || '',
+          jobTitle: s.job_title || 'Completed Shift',
+          businessName: s.business_name || 'Verified Employer',
+          amount: Number(s.amount) || 0,
+          completedDate: formattedDate,
+          status: 'paid',
+          receiptNumber: `RCP-${(s.id || '').slice(-6).toUpperCase()}`,
+        };
+      }).filter(Boolean) as EarningRecord[];
+    } catch {
+      return [];
+    }
   }, [shifts]);
 
   const totalEarnings = useMemo(() => {
-    return earnings.reduce((acc, curr) => acc + curr.amount, 0);
+    try {
+      return (earnings || []).reduce((acc, curr) => acc + (Number(curr?.amount) || 0), 0);
+    } catch {
+      return 0;
+    }
   }, [earnings]);
 
   const thisMonthEarnings = totalEarnings;
@@ -412,24 +444,28 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Current reference coordinate (city center or default)
     const refCoords = CITY_COORDINATES[filters.city] || CITY_COORDINATES['Bengaluru'] || { lat: 12.9716, lng: 77.5946 };
 
-    // 1. Attach distance
-    const withDistance = jobs.map(job => {
-      const dist = calculateDistanceKm(
-        refCoords.lat,
-        refCoords.lng,
-        job.coordinates.lat,
-        job.coordinates.lng
-      );
-      return {
-        ...job,
-        distanceKm: dist,
-      };
-    });
+    // 1. Attach distance safely
+    const withDistance = (jobs || [])
+      .filter((j): j is JobListing => Boolean(j && j.id))
+      .map(job => {
+        const jLat = job.coordinates?.lat ?? 12.9716;
+        const jLng = job.coordinates?.lng ?? 77.5946;
+        const dist = calculateDistanceKm(
+          refCoords.lat,
+          refCoords.lng,
+          jLat,
+          jLng
+        );
+        return {
+          ...job,
+          coordinates: job.coordinates || { lat: jLat, lng: jLng },
+          distanceKm: dist,
+        };
+      });
 
     // 2. Apply filtering
     const filtered = withDistance.filter(job => {
-      // STRICT VISIBILITY: Once a job is accepted or completed/cancelled,
-      // it must NOT appear to anyone else in public discovery, search, or map.
+      // STRICT VISIBILITY: Only show active shifts
       if (job.status !== 'active') {
         return false;
       }

@@ -23,7 +23,7 @@ export const JobCard: React.FC<JobCardProps> = ({
   const userApp = applications.find((a) => a.jobId === job.id);
   const hasApplied = !!userApp;
 
-  const paymentFormatted = `₹${job.paymentAmount.toLocaleString('en-IN')}`;
+  const paymentFormatted = `₹${(Number(job.paymentAmount) || 0).toLocaleString('en-IN')}`;
   const paymentUnit = (() => {
     const type = (job.paymentType || job.payment?.frequency || '').toLowerCase();
     if (type.includes('hour')) return '/hour';

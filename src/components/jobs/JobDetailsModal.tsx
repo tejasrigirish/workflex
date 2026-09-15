@@ -70,7 +70,7 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ job, onClose, 
     window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
   };
 
-  const paymentFormatted = `₹${job.paymentAmount.toLocaleString('en-IN')}`;
+  const paymentFormatted = `₹${(Number(job.paymentAmount) || 0).toLocaleString('en-IN')}`;
   const paymentUnit = (() => {
     const type = (job.paymentType || job.payment?.frequency || '').toLowerCase();
     if (type.includes('hour')) return '/hour';

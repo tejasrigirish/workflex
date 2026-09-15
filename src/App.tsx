@@ -58,7 +58,7 @@ const MainAppContent: React.FC = () => {
   );
   const [isPostJobModalOpen, setIsPostJobModalOpen] = useState<boolean>(false);
 
-  const savedJobs = jobs.filter((j) => savedJobIds.includes(j.id));
+  const savedJobs = (jobs || []).filter((j) => j && (savedJobIds || []).includes(j.id));
 
   // Intent resume and Role-based redirection upon login
   React.useEffect(() => {
@@ -166,7 +166,7 @@ const MainAppContent: React.FC = () => {
           />
         )}
 
-        {currentView === 'dashboard' && role === 'student' && (
+        {((currentView === 'dashboard') || (!['landing', 'discover', 'discover-map', 'profile', 'applications', 'saved', 'earnings', 'employer'].includes(currentView) && role !== 'employer')) && (
           <StudentDashboard
             onNavigateToDiscovery={() => setCurrentView('discover')}
             onNavigateToApplications={() => setCurrentView('applications')}
