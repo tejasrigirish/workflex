@@ -15,7 +15,12 @@ import {
   ArrowRight,
   Camera
 } from 'lucide-react';
-import { CITY_COORDINATES } from '../map/JobMap';
+import {
+  CITY_COORDINATES,
+  getCityCoordinates,
+  isValidCoordinate,
+  sanitizeCoordinates,
+} from '../../constants/cities';
 
 interface PostJobModalProps {
   onClose: () => void;
@@ -85,12 +90,12 @@ export const PostJobModal: React.FC<PostJobModalProps> = ({ onClose, onSuccess }
   const [workersNeeded, setWorkersNeeded] = useState<number>(2);
 
   // Business Location & Real Coordinates
-  const [businessName, setBusinessName] = useState(user?.employerData?.businessName || user?.name || 'Local Store');
-  const [employerPhone, setEmployerPhone] = useState(user?.phone || '+91 98450 12389');
+  const [businessName, setBusinessName] = useState(user?.employerData?.businessName || user?.name || '');
+  const [employerPhone, setEmployerPhone] = useState(user?.phone || user?.employerData?.phone || '');
   const [city, setCity] = useState(user?.employerData?.city || 'Bengaluru');
-  const [businessAddress, setBusinessAddress] = useState(user?.employerData?.businessAddress || '104, 5th Cross, Koramangala');
+  const [businessAddress, setBusinessAddress] = useState(user?.employerData?.businessAddress || '');
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number }>(() => {
-    const defaultCoords = CITY_COORDINATES[user?.employerData?.city || 'Bengaluru'] || CITY_COORDINATES['Bengaluru'];
+    const defaultCoords = getCityCoordinates(user?.employerData?.city || 'Bengaluru');
     return { lat: defaultCoords.lat, lng: defaultCoords.lng };
   });
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -127,26 +132,37 @@ export const PostJobModal: React.FC<PostJobModalProps> = ({ onClose, onSuccess }
       const data = await response.json();
 
       if (data && data.length > 0) {
-        setCoordinates({
-          lat: parseFloat(data[0].lat),
-          lng: parseFloat(data[0].lon),
-        });
-        setGeocodeSuccess(true);
+        const parsedLat = parseFloat(data[0].lat);
+        const parsedLng = parseFloat(data[0].lon);
+        if (isValidCoordinate(parsedLat, parsedLng)) {
+          setCoordinates({
+            lat: parsedLat,
+            lng: parsedLng,
+          });
+          setGeocodeSuccess(true);
+        } else {
+          const cityCoord = getCityCoordinates(city);
+          setCoordinates({
+            lat: cityCoord.lat,
+            lng: cityCoord.lng,
+          });
+          setGeocodeSuccess(true);
+        }
       } else {
-        // Fallback with slight organic offset from city center
-        const cityCoord = CITY_COORDINATES[city] || CITY_COORDINATES['Bengaluru'];
+        const cityCoord = getCityCoordinates(city);
         setCoordinates({
-          lat: cityCoord.lat + (Math.random() - 0.5) * 0.02,
-          lng: cityCoord.lng + (Math.random() - 0.5) * 0.02,
+          lat: cityCoord.lat,
+          lng: cityCoord.lng,
         });
         setGeocodeSuccess(true);
       }
     } catch {
-      const cityCoord = CITY_COORDINATES[city] || CITY_COORDINATES['Bengaluru'];
+      const cityCoord = getCityCoordinates(city);
       setCoordinates({
         lat: cityCoord.lat,
         lng: cityCoord.lng,
       });
+      setGeocodeSuccess(true);
     } finally {
       setIsGeocoding(false);
     }
@@ -177,16 +193,41 @@ export const PostJobModal: React.FC<PostJobModalProps> = ({ onClose, onSuccess }
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (isSubmitting) return;
+
+    // Validate 10-digit contact mobile number
+    const digits = employerPhone.replace(/\D/g, '');
+    const cleanPhone = digits.length === 12 && digits.startsWith('91')
+      ? digits.slice(2)
+      : (digits.length === 11 && digits.startsWith('0') ? digits.slice(1) : digits);
+
+    if (!/^\d{10}$/.test(cleanPhone)) {
+      setErrorMsg('Please enter a valid 10-digit contact mobile number so applicants can reach you.');
+      setStep('form');
+      return;
+    }
+
+    if (!businessAddress.trim()) {
+      setErrorMsg('Please enter the physical business street address / landmark.');
+      setStep('form');
+      return;
+    }
+
+    if (!isValidCoordinate(coordinates.lat, coordinates.lng)) {
+      setErrorMsg('Invalid map coordinates. Please choose a valid city or geocode the address.');
+      setStep('form');
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMsg(null);
 
     try {
       const ok = await postJob({
         title: title || 'Store Part-Time Assistant',
-        businessName,
+        businessName: businessName || user?.name || 'Local Business',
         employerId: user?.id || 'emp-user',
         employerName: user?.name || 'Store Owner',
-        employerPhone,
+        employerPhone: cleanPhone,
         employerEmail: user?.email || '',
         isVerifiedBusiness: true,
         businessDescription: `Local business operating in ${city}.`,
@@ -255,10 +296,33 @@ export const PostJobModal: React.FC<PostJobModalProps> = ({ onClose, onSuccess }
               id="post-job-form"
               onSubmit={(e) => {
                 e.preventDefault();
+                const digits = employerPhone.replace(/\D/g, '');
+                const cleanPhone = digits.length === 12 && digits.startsWith('91')
+                  ? digits.slice(2)
+                  : (digits.length === 11 && digits.startsWith('0') ? digits.slice(1) : digits);
+                if (!/^\d{10}$/.test(cleanPhone)) {
+                  setErrorMsg('Please enter a valid 10-digit mobile number so students can contact you.');
+                  return;
+                }
+                if (!businessAddress.trim()) {
+                  setErrorMsg('Please enter the street address / landmark.');
+                  return;
+                }
+                if (!isValidCoordinate(coordinates.lat, coordinates.lng)) {
+                  setErrorMsg('Please select a valid city or geocode the address.');
+                  return;
+                }
+                setErrorMsg(null);
                 setStep('preview');
               }}
               className="space-y-6"
             >
+              {errorMsg && (
+                <div className="p-3 bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs rounded-xl flex items-center justify-between">
+                  <span>{errorMsg}</span>
+                  <button type="button" onClick={() => setErrorMsg(null)} className="text-rose-400 hover:text-white font-bold ml-2">✕</button>
+                </div>
+              )}
               {/* 1. Job Role */}
               <div className="space-y-3">
                 <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
@@ -438,8 +502,8 @@ export const PostJobModal: React.FC<PostJobModalProps> = ({ onClose, onSuccess }
                       value={city}
                       onChange={(e) => {
                         setCity(e.target.value);
-                        const c = CITY_COORDINATES[e.target.value];
-                        if (c) setCoordinates({ lat: c.lat, lng: c.lng });
+                        const c = getCityCoordinates(e.target.value);
+                        setCoordinates({ lat: c.lat, lng: c.lng });
                       }}
                       className="w-full bg-[#141A28] border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500 transition cursor-pointer"
                     >
@@ -452,14 +516,24 @@ export const PostJobModal: React.FC<PostJobModalProps> = ({ onClose, onSuccess }
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">Contact Phone *</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-slate-300 font-semibold">Employer Contact Phone *</label>
+                      <span className="text-[10px] text-cyan-400 font-medium">10-Digit Mobile</span>
+                    </div>
                     <input
                       type="tel"
                       required
                       value={employerPhone}
-                      onChange={(e) => setEmployerPhone(e.target.value)}
+                      onChange={(e) => {
+                        setEmployerPhone(e.target.value);
+                        setErrorMsg(null);
+                      }}
+                      placeholder="e.g. 9845012345"
                       className="w-full bg-[#141A28] border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-blue-500 transition"
                     />
+                    <span className="text-[10px] text-slate-400 mt-1 block">
+                      Applicants will call this phone number directly to accept shifts
+                    </span>
                   </div>
                 </div>
 
@@ -602,9 +676,10 @@ export const PostJobModal: React.FC<PostJobModalProps> = ({ onClose, onSuccess }
                   <p className="text-xs text-slate-300 mt-2 leading-relaxed">{shortDescription}</p>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs text-slate-300 pt-3 border-t border-slate-800">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-slate-300 pt-3 border-t border-slate-800">
                   <div>Shift: <strong className="text-white">{workingHoursText}</strong></div>
                   <div>Workers: <strong className="text-white">{workersNeeded}</strong></div>
+                  <div>Phone: <strong className="text-emerald-400">+91 {employerPhone.replace(/\D/g, '').slice(-10)}</strong></div>
                   <div>Map Pin: <strong className="text-emerald-400">{coordinates.lat.toFixed(4)}, {coordinates.lng.toFixed(4)}</strong></div>
                 </div>
               </div>

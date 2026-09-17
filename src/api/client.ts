@@ -42,6 +42,7 @@ export interface ApiJob {
   postedDate: string;
   businessName: string;
   businessType: string;
+  employerPhone?: string;
   isVerifiedBusiness: boolean;
   payment: {
     amount: number;
@@ -234,6 +235,7 @@ export const api = {
     requiredSkills?: string[];
     businessName?: string;
     businessType?: string;
+    employerPhone?: string;
   }) {
     try {
       return await request<{ success: boolean; jobId: string; message: string }>('/jobs', {

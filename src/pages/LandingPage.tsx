@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { CATEGORIES } from '../data/categories';
 import { JobCard } from '../components/jobs/JobCard';
 import { JobListing, JobCategory } from '../types/job';
+import { CITY_COORDINATES } from '../constants/cities';
 import {
   Compass,
   Plus,
@@ -92,13 +93,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <ArrowRight className="w-4 h-4 ml-0.5" />
           </button>
 
-          <button
-            onClick={onOpenPostJob}
-            className="w-full sm:w-auto btn-floating-glass flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-2xl text-sm font-bold text-slate-200 cursor-pointer"
-          >
-            <Plus className="w-4 h-4 text-[#BAE6FD]" />
-            <span>Post a Job</span>
-          </button>
+          {role !== 'student' && (
+            <button
+              onClick={onOpenPostJob}
+              className="w-full sm:w-auto btn-floating-glass flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-2xl text-sm font-bold text-slate-200 cursor-pointer"
+            >
+              <Plus className="w-4 h-4 text-[#BAE6FD]" />
+              <span>Post a Job</span>
+            </button>
+          )}
         </div>
 
         {/* Trust summary strip with soft pastel icons */}
@@ -151,11 +154,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     onChange={(e) => setSelectedCity(e.target.value)}
                     className="w-full pl-9 pr-8 py-3 rounded-2xl bg-slate-900/80 border border-slate-700/70 text-xs font-semibold text-slate-200 focus:outline-none focus:border-[#BAE6FD]/70 transition cursor-pointer appearance-none"
                   >
-                    <option value="Bengaluru">Bengaluru</option>
-                    <option value="Mumbai">Mumbai</option>
-                    <option value="Delhi NCR">Delhi NCR</option>
-                    <option value="Pune">Pune</option>
-                    <option value="Hyderabad">Hyderabad</option>
+                    {Object.keys(CITY_COORDINATES).map((c) => (
+                      <option key={c} value={c} className="bg-[#0D121D] text-white">
+                        {c}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useJobs } from '../../context/JobContext';
 import { CATEGORIES } from '../../data/categories';
 import { JobCategory, ShiftTiming, DurationType, WorkType, SortOption } from '../../types/job';
-import { CITY_COORDINATES } from '../map/JobMap';
+import { CITY_COORDINATES } from '../../constants/cities';
 import {
   Search,
   SlidersHorizontal,

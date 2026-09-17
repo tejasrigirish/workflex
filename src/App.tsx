@@ -163,6 +163,7 @@ const MainAppContent: React.FC = () => {
           <DiscoverPage
             onViewJobDetails={(job) => setActiveModalJob(job)}
             onApplyJob={(job) => handleApplyJob(job)}
+            onOpenPostJob={handleOpenPostJob}
             initialMobileView={currentView === 'discover-map' ? 'map' : 'list'}
           />
         )}
@@ -235,6 +236,7 @@ const MainAppContent: React.FC = () => {
       <MobileNav
         currentView={currentView}
         onNavigate={(view) => setCurrentView(view)}
+        onOpenPostJob={handleOpenPostJob}
       />
 
       {/* Modals Container */}

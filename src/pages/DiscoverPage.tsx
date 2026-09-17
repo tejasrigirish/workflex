@@ -9,12 +9,14 @@ import { Map, List, Compass, ArrowUpDown, Sparkles } from 'lucide-react';
 interface DiscoverPageProps {
   onViewJobDetails: (job: JobListing) => void;
   onApplyJob: (job: JobListing) => void;
+  onOpenPostJob?: () => void;
   initialMobileView?: 'list' | 'map';
 }
 
 export const DiscoverPage: React.FC<DiscoverPageProps> = ({
   onViewJobDetails,
   onApplyJob,
+  onOpenPostJob,
   initialMobileView = 'list',
 }) => {
   const {
@@ -60,7 +62,7 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
       <div className="lg:hidden flex items-center justify-center p-1 bg-[#111827] border border-[#1F293D] rounded-xl shadow-md">
         <button
           onClick={() => setMobileView('list')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition cursor-pointer ${
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 min-h-[44px] rounded-lg text-xs font-bold transition cursor-pointer ${
             mobileView === 'list'
               ? 'bg-cyan-400 text-slate-950 shadow-md shadow-cyan-400/20'
               : 'text-slate-400 hover:text-white'
@@ -71,8 +73,13 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
         </button>
 
         <button
-          onClick={() => setMobileView('map')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition cursor-pointer ${
+          onClick={() => {
+            setMobileView('map');
+            setTimeout(() => {
+              window.dispatchEvent(new Event('resize'));
+            }, 80);
+          }}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 min-h-[44px] rounded-lg text-xs font-bold transition cursor-pointer ${
             mobileView === 'map'
               ? 'bg-cyan-400 text-slate-950 shadow-md shadow-cyan-400/20'
               : 'text-slate-400 hover:text-white'
@@ -141,12 +148,22 @@ export const DiscoverPage: React.FC<DiscoverPageProps> = ({
                     ? 'Verified neighborhood businesses have not published shifts in this area yet. Check back soon or post a job if you are hiring!'
                     : 'Try broadening your distance slider or resetting your filters.'}
                 </p>
-                <button
-                  onClick={() => updateFilter('categories', [])}
-                  className="px-4 py-2 bg-cyan-400 hover:bg-cyan-300 text-slate-950 rounded-xl text-xs font-bold transition cursor-pointer shadow-md shadow-cyan-400/20"
-                >
-                  Clear Category Filter
-                </button>
+                {jobs.length === 0 && onOpenPostJob ? (
+                  <button
+                    onClick={onOpenPostJob}
+                    className="px-5 py-2.5 bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 rounded-xl text-xs font-black transition cursor-pointer shadow-lg shadow-cyan-400/25 flex items-center gap-1.5 mx-auto"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+                    <span>Post a Shift Listing</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => updateFilter('categories', [])}
+                    className="px-4 py-2 bg-cyan-400 hover:bg-cyan-300 text-slate-950 rounded-xl text-xs font-bold transition cursor-pointer shadow-md shadow-cyan-400/20"
+                  >
+                    Clear Category Filter
+                  </button>
+                )}
               </div>
             ) : (
               filteredJobs.map((job) => (

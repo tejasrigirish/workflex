@@ -41,6 +41,7 @@ export interface JobListing {
     lat: number;
     lng: number;
   };
+  hasValidCoordinates?: boolean;
   distanceKm?: number;
   category: JobCategory;
   workType: WorkType;

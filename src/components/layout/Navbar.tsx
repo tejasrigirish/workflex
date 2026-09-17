@@ -195,14 +195,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenP
 
         {/* Right Nav Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Post a Shift CTA */}
-          <button
-            onClick={onOpenPostJob}
-            className="btn-floating-primary flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">Post a Shift</span>
-          </button>
+          {/* Post a Shift CTA - Strictly hidden for Students / Employees */}
+          {role !== 'student' && (
+            <button
+              onClick={onOpenPostJob}
+              className="btn-floating-primary flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">Post a Shift</span>
+            </button>
+          )}
 
           {!isAuthenticated ? (
             <button

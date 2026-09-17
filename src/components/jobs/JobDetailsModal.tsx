@@ -217,12 +217,17 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ job, onClose, 
               <span>{job.businessName}</span>
               <span className="text-slate-600">•</span>
               <span className="text-slate-400">{job.city}</span>
-              {job.distanceKm && (
+              {job.hasValidCoordinates === false ? (
+                <>
+                  <span className="text-slate-600">•</span>
+                  <span className="text-amber-400/90 text-xs font-semibold">(Location unavailable on map)</span>
+                </>
+              ) : typeof job.distanceKm === 'number' ? (
                 <>
                   <span className="text-slate-600">•</span>
                   <span className="text-emerald-400 font-semibold">{job.distanceKm} km from you</span>
                 </>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -350,7 +355,18 @@ export const JobDetailsModal: React.FC<JobDetailsModalProps> = ({ job, onClose, 
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>{job.employerPhone} (Contact: {job.employerName})</span>
+                  {job.employerPhone ? (
+                    <a
+                      href={`tel:${job.employerPhone}`}
+                      className="text-emerald-300 hover:text-emerald-200 hover:underline font-bold flex items-center gap-1.5 transition"
+                      title="Tap to call employer"
+                    >
+                      <span>📞 +91 {job.employerPhone.replace(/\D/g, '').slice(-10)}</span>
+                      <span className="text-[11px] text-slate-400 font-normal">({job.employerName})</span>
+                    </a>
+                  ) : (
+                    <span>Contact via WorkFlex application</span>
+                  )}
                 </div>
                 {job.employerEmail && (
                   <div className="flex items-center gap-2 text-slate-400">

@@ -31,6 +31,9 @@ export class ErrorBoundary extends Component<Props, State> {
   private handleReset = () => {
     try {
       localStorage.removeItem('workflex_active_session');
+      localStorage.removeItem('workflex_db_jobs');
+      localStorage.removeItem('workflex_saved_jobs');
+      sessionStorage.clear();
     } catch {}
     window.location.href = '/';
   };

@@ -59,6 +59,7 @@ export const AuthGate: React.FC<AuthGateProps> = ({ onSuccess, onCancel, isModal
   // Registration specifics
   const [name, setName] = useState('');
   const [businessName, setBusinessName] = useState('');
+  const [employerContactPhone, setEmployerContactPhone] = useState('');
   const [businessCategory, setBusinessCategory] = useState('Retail & Grocery');
   const [city, setCity] = useState('Bengaluru');
   const [skills, setSkills] = useState<string[]>(['Customer Support', 'Billing']);
@@ -208,12 +209,24 @@ export const AuthGate: React.FC<AuthGateProps> = ({ onSuccess, onCancel, isModal
       return;
     }
 
+    // If role is employer, strictly require valid 10-digit contact mobile
+    let employerPhoneFinal = '';
+    if (selectedRole === 'employer') {
+      const candidatePhone = !cleanId.includes('@') ? cleanId : employerContactPhone.trim();
+      const cleanDigits = candidatePhone.replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '').replace(/^0/, '');
+      if (!cleanDigits || cleanDigits.length !== 10) {
+        setErrorMessage('Please provide a valid 10-digit mobile number for employer inquiries and applicant contact.');
+        return;
+      }
+      employerPhoneFinal = cleanDigits;
+    }
+
     setIsLoading(true);
     try {
       const isEmail = cleanId.includes('@');
       const payload = {
         email: isEmail ? cleanId : undefined,
-        phone: !isEmail ? cleanId : undefined,
+        phone: selectedRole === 'employer' ? employerPhoneFinal : (!isEmail ? cleanId : undefined),
         password,
         role: selectedRole,
         name: name.trim(),
@@ -947,6 +960,31 @@ export const AuthGate: React.FC<AuthGateProps> = ({ onSuccess, onCancel, isModal
                   </p>
                 )}
               </div>
+
+              {/* Employer Specific: Explicit Contact Phone if Identifier is Email */}
+              {selectedRole === 'employer' && identifierType !== 'phone' && (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-300">
+                      Employer Contact Phone Number *
+                    </label>
+                    <span className="text-[10px] text-purple-400 font-medium">Required for Applicant Calls</span>
+                  </div>
+                  <div className="relative">
+                    <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-purple-400 w-4 h-4" />
+                    <input
+                      type="tel"
+                      value={employerContactPhone}
+                      onChange={(e) => { setEmployerContactPhone(e.target.value); resetFormAlerts(); }}
+                      placeholder="Enter 10-digit mobile number (e.g. 9845012345)"
+                      className="w-full bg-[#111827]/80 border border-white/10 text-white text-xs sm:text-sm rounded-xl pl-10 pr-4 py-2 focus:outline-none focus:border-purple-400 transition"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400">
+                    Students will use this contact phone number to call you when hired for shifts.
+                  </p>
+                </div>
+              )}
 
               {/* Password & Confirm Password (Side by side on sm) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -230,9 +230,17 @@ export const MagneticBackground: React.FC = () => {
       });
     };
 
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    window.addEventListener('touchmove', handleTouchMove, { passive: true });
-    document.addEventListener('mouseleave', handleMouseLeave);
+    const isTouchDevice =
+      window.matchMedia('(hover: none) and (pointer: coarse)').matches ||
+      'ontouchstart' in window ||
+      (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0);
+
+    // Desktop: Full magnetic mouse interaction.
+    // Mobile/Touch: Subtle ambient fluid drift (zero touchmove CPU overhead or scroll interference).
+    if (!isTouchDevice && !prefersReducedMotion) {
+      window.addEventListener('mousemove', handleMouseMove, { passive: true });
+      document.addEventListener('mouseleave', handleMouseLeave);
+    }
     window.addEventListener('resize', handleResize);
 
     let time = 0;
@@ -396,7 +404,6 @@ export const MagneticBackground: React.FC = () => {
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('mouseleave', handleMouseLeave);
       window.removeEventListener('resize', handleResize);
     };

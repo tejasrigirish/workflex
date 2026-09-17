@@ -3,6 +3,7 @@
 // Provides 100% offline & serverless deployment resilience (e.g. Vercel, Netlify, Static Hosting)
 
 import { ApiUser, ApiJob, ApiApplication, ApiShift } from './client';
+import { sanitizeCoordinates, isValidCoordinate, extractJobCoordinates } from '../constants/cities';
 
 const USERS_KEY = 'workflex_db_users';
 const JOBS_KEY = 'workflex_db_jobs';
@@ -61,125 +62,7 @@ const DEFAULT_USERS: StoredUser[] = [
   },
 ];
 
-const DEFAULT_JOBS: ApiJob[] = [
-  {
-    id: 'job_sample_1',
-    employerId: 'emp_demo_1',
-    title: 'Weekend Evening Billing & Counter Help',
-    description: 'Need an energetic college student to handle evening billing, UPI checkouts, and customer assistance during peak weekend hours.',
-    fullDescription: 'Need an energetic college student to handle evening billing, UPI checkouts, and customer assistance during peak weekend hours. Friendly local supermarket environment with immediate daily payment.',
-    shortDescription: 'Evening counter assistance, UPI billing, and customer checkouts in Koramangala.',
-    category: 'Retail',
-    salary: 750,
-    salaryType: 'per_shift',
-    date: 'Weekends (Sat & Sun)',
-    startTime: '05:00 PM',
-    endTime: '09:30 PM',
-    durationText: '5:00 PM - 9:30 PM',
-    workingHoursText: '4.5 Hours/Shift',
-    address: '104, 5th Cross, Koramangala, Bengaluru',
-    locality: 'Koramangala',
-    city: 'Bengaluru',
-    latitude: 12.9352,
-    longitude: 77.6245,
-    numberOfWorkers: 2,
-    status: 'open',
-    photoUrl: 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=800&q=80',
-    workplacePhotos: ['https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=800&q=80'],
-    responsibilities: ['Assist counter checkout & scanner operations', 'Handle customer inquiries politely', 'Organize front-counter displays'],
-    requiredSkills: ['Punctuality', 'Basic Math / UPI Billing', 'English & Kannada basics'],
-    postedDate: 'Today',
-    businessName: 'Venkatesh Stores & Provisions',
-    businessType: 'Retail & Grocery',
-    isVerifiedBusiness: true,
-    payment: {
-      amount: 750,
-      frequency: 'per_shift',
-      currency: 'INR',
-      isNegotiable: false,
-    },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'job_sample_2',
-    employerId: 'emp_demo_1',
-    title: 'Cafe Assistant & Barista Support',
-    description: 'Help out during morning and afternoon rushes at our specialty cafe. Assist with order preparation and maintaining a clean dining area.',
-    fullDescription: 'Help out during morning and afternoon rushes at our specialty cafe. Assist with order preparation, brewing equipment cleanup, and maintaining a clean dining area.',
-    shortDescription: 'Assist barista counter, clean tables, and help prep coffee drinks in Indiranagar.',
-    category: 'Cafe & Restaurant',
-    salary: 180,
-    salaryType: 'per_hour',
-    date: 'Flexible Shifts',
-    startTime: '04:00 PM',
-    endTime: '08:30 PM',
-    durationText: '4:00 PM - 8:30 PM',
-    workingHoursText: '4.5 Hours/Shift',
-    address: '12th Main Road, Indiranagar, Bengaluru',
-    locality: 'Indiranagar',
-    city: 'Bengaluru',
-    latitude: 12.9719,
-    longitude: 77.6412,
-    numberOfWorkers: 1,
-    status: 'open',
-    photoUrl: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80',
-    workplacePhotos: ['https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80'],
-    responsibilities: ['Prepare simple beverages and snacks', 'Keep preparation area sparkling clean', 'Clear and sanitize customer tables'],
-    requiredSkills: ['Friendly Demeanor', 'Hygiene Standards', 'Active Team Player'],
-    postedDate: 'Yesterday',
-    businessName: 'Artisan Roast & Brew',
-    businessType: 'Cafe & Bakery',
-    isVerifiedBusiness: true,
-    payment: {
-      amount: 180,
-      frequency: 'per_hour',
-      currency: 'INR',
-      isNegotiable: false,
-    },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'job_sample_3',
-    employerId: 'emp_demo_1',
-    title: 'Bookstore Cataloging & Shelving Help',
-    description: 'Help organize incoming book deliveries and assist university students in finding textbooks and novels.',
-    fullDescription: 'Help organize incoming book deliveries, update barcode cataloging, and assist university students in finding textbooks and novels.',
-    shortDescription: 'Sort new arrivals and assist customers in finding books in Church Street.',
-    category: 'Library & Bookstore',
-    salary: 600,
-    salaryType: 'per_shift',
-    date: 'Everyday Afternoon',
-    startTime: '02:00 PM',
-    endTime: '06:00 PM',
-    durationText: '2:00 PM - 6:00 PM',
-    workingHoursText: '4 Hours/Shift',
-    address: 'Church Street, Brigade Road Cross, Bengaluru',
-    locality: 'MG Road / Church Street',
-    city: 'Bengaluru',
-    latitude: 12.9756,
-    longitude: 77.6067,
-    numberOfWorkers: 1,
-    status: 'open',
-    photoUrl: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=800&q=80',
-    workplacePhotos: ['https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=800&q=80'],
-    responsibilities: ['Organize fiction and non-fiction sections alphabetically', 'Help college students locate course readers', 'Maintain a tidy quiet reading environment'],
-    requiredSkills: ['Attention to Detail', 'Interest in Books', 'Punctuality'],
-    postedDate: '2 days ago',
-    businessName: 'Blossom Heritage Books',
-    businessType: 'Bookstore & Stationery',
-    isVerifiedBusiness: true,
-    payment: {
-      amount: 600,
-      frequency: 'per_shift',
-      currency: 'INR',
-      isNegotiable: false,
-    },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+const DEFAULT_JOBS: ApiJob[] = [];
 
 function getStoredUsers(): StoredUser[] {
   try {
@@ -212,9 +95,53 @@ function getStoredJobs(): ApiJob[] {
       localStorage.setItem(JOBS_KEY, JSON.stringify(DEFAULT_JOBS));
       return DEFAULT_JOBS;
     }
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    // Only retain real user-posted jobs, strictly purging any legacy sample jobs
+    const realJobsOnly = parsed.filter(
+      (j: any) => j && typeof j === 'object' && !String(j.id).startsWith('job_sample_')
+    );
+
+    let hasRepaired = realJobsOnly.length !== parsed.length;
+    const sanitized = realJobsOnly
+      .map((job: ApiJob) => {
+        if (!job || typeof job !== 'object') return null;
+        const valid = extractJobCoordinates({
+          lat: job.latitude,
+          lng: job.longitude,
+          ...(job as any).coordinates,
+        });
+        if (valid) {
+          if (job.latitude !== valid.lat || job.longitude !== valid.lng) {
+            hasRepaired = true;
+            return {
+              ...job,
+              latitude: valid.lat,
+              longitude: valid.lng,
+            };
+          }
+          return job;
+        }
+        // If coordinate is not valid, ensure we don't hold NaN
+        if (job.latitude !== null && job.latitude !== undefined && !Number.isFinite(job.latitude)) {
+          hasRepaired = true;
+          return {
+            ...job,
+            latitude: null as any,
+            longitude: null as any,
+          };
+        }
+        return job;
+      })
+      .filter(Boolean) as ApiJob[];
+
+    if (hasRepaired) {
+      try {
+        localStorage.setItem(JOBS_KEY, JSON.stringify(sanitized));
+      } catch {}
+    }
+    return sanitized;
   } catch {
-    return DEFAULT_JOBS;
+    return [];
   }
 }
 
@@ -281,7 +208,12 @@ export const localStore = {
     const rawPhone = (data.phone || '').trim();
     const cleanPhone = normalizePhone(rawPhone);
 
-    if (!cleanEmail && !cleanPhone) {
+    // Employers MUST provide a valid 10-digit contact phone number
+    if (data.role === 'employer') {
+      if (!cleanPhone || cleanPhone.length !== 10) {
+        throw new Error('Employer registration requires a valid 10-digit contact phone number.');
+      }
+    } else if (!cleanEmail && !cleanPhone) {
       throw new Error('Please provide either an email or a 10-digit phone number');
     }
 
@@ -324,7 +256,7 @@ export const localStore = {
             businessName: data.collegeOrBusiness || data.name,
             businessType: 'Local Business',
             description: 'Verified business employer on WorkFlex.',
-            phone: cleanPhone || '9845012345',
+            phone: cleanPhone,
             verificationStatus: 'verified',
             address: `${data.city || 'Bengaluru'}, India`,
             city: data.city || 'Bengaluru',
@@ -486,6 +418,13 @@ export const localStore = {
     const jobId = `job_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const now = new Date().toISOString();
 
+    const parsedCoords = extractJobCoordinates({
+      lat: jobData.latitude,
+      lng: jobData.longitude,
+      ...jobData.coordinates,
+    });
+    const safeCoords = parsedCoords || sanitizeCoordinates(null, jobData.city || 'Bengaluru');
+
     const newJob: ApiJob = {
       id: jobId,
       employerId: jobData.employerId,
@@ -501,11 +440,12 @@ export const localStore = {
       endTime: jobData.endTime || '09:00 PM',
       durationText: `${jobData.startTime || '5:00 PM'} - ${jobData.endTime || '9:00 PM'}`,
       workingHoursText: '4 Hours/Shift',
+
       address: jobData.address,
       locality: jobData.locality || jobData.address,
       city: jobData.city || 'Bengaluru',
-      latitude: Number(jobData.latitude) || 12.9716,
-      longitude: Number(jobData.longitude) || 77.5946,
+      latitude: safeCoords.lat,
+      longitude: safeCoords.lng,
       numberOfWorkers: Number(jobData.numberOfWorkers) || 1,
       status: 'open',
       photoUrl: jobData.photoUrl || '',
@@ -515,6 +455,7 @@ export const localStore = {
       postedDate: 'Today',
       businessName: jobData.businessName || 'Verified Employer',
       businessType: jobData.businessType || 'Local Store',
+      employerPhone: jobData.employerPhone || jobData.phone || '',
       isVerifiedBusiness: true,
       payment: {
         amount: Number(jobData.salary),

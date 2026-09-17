@@ -14,7 +14,7 @@ import {
   ArrowRight,
   Sparkles,
 } from 'lucide-react';
-import { CITY_COORDINATES } from '../map/JobMap';
+import { CITY_COORDINATES } from '../../constants/cities';
 
 interface StudentDashboardProps {
   onNavigateToDiscovery: () => void;

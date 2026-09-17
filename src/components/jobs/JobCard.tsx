@@ -1,6 +1,6 @@
 import React from 'react';
 import { JobListing } from '../../types/job';
-import { MapPin, Clock, Bookmark, ArrowRight, ShieldCheck, Calendar } from 'lucide-react';
+import { MapPin, Clock, Bookmark, ArrowRight, ShieldCheck, Calendar, Phone } from 'lucide-react';
 import { useJobs } from '../../context/JobContext';
 
 interface JobCardProps {
@@ -112,7 +112,13 @@ export const JobCard: React.FC<JobCardProps> = ({
           <div className="flex flex-wrap items-center gap-y-1.5 gap-x-3 text-xs text-slate-400 mt-2">
             <div className="flex items-center gap-1 text-slate-300">
               <MapPin className="w-3.5 h-3.5 text-rose-300 shrink-0 group-hover:animate-bounce" />
-              <span>{job.distanceKm ? `${job.distanceKm} km away` : job.city}</span>
+              <span>
+                {job.hasValidCoordinates === false
+                  ? `${job.city || 'City'} (Location unavailable)`
+                  : typeof job.distanceKm === 'number'
+                  ? `${job.distanceKm} km away`
+                  : job.city || 'Location unavailable'}
+              </span>
             </div>
             <span className="text-slate-600">•</span>
             <div className="flex items-center gap-1">
@@ -123,6 +129,20 @@ export const JobCard: React.FC<JobCardProps> = ({
             <div className="text-slate-300">
               <span>{job.workingHoursText}</span>
             </div>
+            {job.employerPhone && (
+              <>
+                <span className="text-slate-600">•</span>
+                <a
+                  href={`tel:${job.employerPhone}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 transition font-medium"
+                  title="Call Employer directly"
+                >
+                  <Phone className="w-3 h-3 text-emerald-400" />
+                  <span>Call: {job.employerPhone.replace(/\D/g, '').slice(-10)}</span>
+                </a>
+              </>
+            )}
           </div>
 
           {/* Short description */}

@@ -87,7 +87,12 @@ export async function handleApiRequest(req, res) {
       const rawPhone = (phone || '').trim();
       const cleanPhone = normalizePhone(rawPhone);
 
-      if (!cleanEmail && !cleanPhone) {
+      // Employers MUST provide a valid 10-digit contact phone number
+      if (role === 'employer') {
+        if (!cleanPhone || cleanPhone.length !== 10) {
+          return sendJson(res, 400, { success: false, error: 'Employer registration requires a valid 10-digit contact phone number for applicant communication.' });
+        }
+      } else if (!cleanEmail && !cleanPhone) {
         return sendJson(res, 400, { success: false, error: 'Please provide either an email or a 10-digit phone number' });
       }
 
@@ -435,8 +440,8 @@ export async function handleApiRequest(req, res) {
         address: r.address,
         locality: r.locality || r.address,
         city: r.city || (r.address.includes('Mysuru') ? 'Mysuru' : r.address.includes('Mumbai') ? 'Mumbai' : r.address.includes('Delhi') ? 'Delhi' : r.address.includes('Pune') ? 'Pune' : r.address.includes('Hyderabad') ? 'Hyderabad' : 'Bengaluru'),
-        latitude: r.latitude,
-        longitude: r.longitude,
+        latitude: Number.isFinite(Number(r.latitude)) ? Number(r.latitude) : 12.9716,
+        longitude: Number.isFinite(Number(r.longitude)) ? Number(r.longitude) : 77.5946,
         numberOfWorkers: r.number_of_workers,
         status: r.status,
         photoUrl: r.photo_url || '',
@@ -446,6 +451,7 @@ export async function handleApiRequest(req, res) {
         postedDate: new Date(r.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
         businessName: r.business_name,
         businessType: r.business_type,
+        employerPhone: r.employer_phone || '',
         isVerifiedBusiness: r.verification_status === 'verified',
         isEmergencyPosting: false,
         workType: 'part_time',
@@ -469,6 +475,7 @@ export async function handleApiRequest(req, res) {
       const body = await parseBody(req);
       const {
         employerId,
+        employerPhone,
         title,
         description,
         category,
@@ -519,6 +526,13 @@ export async function handleApiRequest(req, res) {
         });
       }
 
+      // If an updated/explicit employer phone is provided, sync it to employer profile & user record
+      const cleanEmployerPhone = normalizePhone(employerPhone || '');
+      if (cleanEmployerPhone && cleanEmployerPhone.length === 10) {
+        db.prepare('UPDATE employers SET phone = ? WHERE id = ?').run(cleanEmployerPhone, emp.id);
+        db.prepare('UPDATE users SET phone = ? WHERE id = ?').run(cleanEmployerPhone, emp.user_id);
+      }
+
       const jobId = `job_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
       const now = new Date().toISOString();
       const jobCity = city || locality || (address.includes('Mysuru') ? 'Mysuru' : address.includes('Mumbai') ? 'Mumbai' : address.includes('Delhi') ? 'Delhi' : address.includes('Pune') ? 'Pune' : address.includes('Hyderabad') ? 'Hyderabad' : 'Bengaluru');
@@ -546,8 +560,8 @@ export async function handleApiRequest(req, res) {
         address.trim(),
         locality ? locality.trim() : address.trim(),
         jobCity.trim(),
-        parseFloat(latitude),
-        parseFloat(longitude),
+        Number.isFinite(parseFloat(latitude)) ? parseFloat(latitude) : 12.9716,
+        Number.isFinite(parseFloat(longitude)) ? parseFloat(longitude) : 77.5946,
         parseInt(numberOfWorkers || '1', 10),
         photoUrl || '',
         JSON.stringify(responsibilities || []),

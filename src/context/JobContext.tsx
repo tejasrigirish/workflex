@@ -5,26 +5,47 @@ import { JobApplication, EarningRecord } from '../types/application';
 import { AppNotification } from '../types/notification';
 import { useAuth } from './AuthContext';
 import { api, ApiJob, ApiApplication, ApiShift } from '../api/client';
-import { CITY_COORDINATES } from '../components/map/JobMap';
+import {
+  CITY_COORDINATES,
+  getCityCoordinates,
+  isValidCoordinate,
+  sanitizeCoordinates,
+  extractJobCoordinates,
+  parseCoordinate,
+} from '../constants/cities';
 
-export function calculateDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+export function calculateDistanceKm(
+  lat1: unknown,
+  lon1: unknown,
+  lat2: unknown,
+  lon2: unknown
+): number | undefined {
+  const pLat1 = parseCoordinate(lat1);
+  const pLon1 = parseCoordinate(lon1);
+  const pLat2 = parseCoordinate(lat2);
+  const pLon2 = parseCoordinate(lon2);
+
   if (
-    typeof lat1 !== 'number' || typeof lon1 !== 'number' ||
-    typeof lat2 !== 'number' || typeof lon2 !== 'number' ||
-    isNaN(lat1) || isNaN(lon1) || isNaN(lat2) || isNaN(lon2) ||
-    !lat1 || !lon1 || !lat2 || !lon2
+    pLat1 === null ||
+    pLon1 === null ||
+    pLat2 === null ||
+    pLon2 === null ||
+    !isValidCoordinate(pLat1, pLon1) ||
+    !isValidCoordinate(pLat2, pLon2)
   ) {
-    return 1.5;
+    return undefined;
   }
+
   const R = 6371; // km
-  const dLat = (lat2 - lat1) * (Math.PI / 180);
-  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const dLat = (pLat2 - pLat1) * (Math.PI / 180);
+  const dLon = (pLon2 - pLon1) * (Math.PI / 180);
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+    Math.cos(pLat1 * (Math.PI / 180)) * Math.cos(pLat2 * (Math.PI / 180)) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return Math.round((R * c) * 10) / 10;
+  const dist = Math.round((R * c) * 10) / 10;
+  return Number.isFinite(dist) ? dist : undefined;
 }
 
 export const DEFAULT_FILTERS: FilterOptions = {
@@ -88,21 +109,27 @@ const JobContext = createContext<JobContextType | undefined>(undefined);
 
 function mapApiJobToJobListing(apiJob: ApiJob): JobListing {
   const salaryVal = Number(apiJob.salary) || 0;
+  const directCoord = extractJobCoordinates({
+    lat: apiJob.latitude,
+    lng: apiJob.longitude,
+    ...(apiJob as any).coordinates,
+  });
+  const hasValidCoordinates = directCoord !== null;
+  // If coordinates are invalid, mark clearly rather than fabricating fake coordinates
+  const safeCoords = directCoord || { lat: 0, lng: 0 };
   return {
     id: apiJob.id || `job_${Math.random()}`,
     title: apiJob.title || 'Flexible Shift',
     businessName: apiJob.businessName || 'Local Business',
     employerId: apiJob.employerId || '',
     employerName: apiJob.businessName || 'Verified Employer',
-    employerPhone: '9845012345',
+    employerPhone: apiJob.employerPhone || (apiJob as any).employer_phone || '',
     isVerifiedBusiness: !!apiJob.isVerifiedBusiness,
     businessDescription: apiJob.description || '',
     businessAddress: apiJob.address || `${apiJob.city || 'Bengaluru'}, India`,
     city: apiJob.city || 'Bengaluru',
-    coordinates: {
-      lat: Number(apiJob.latitude) || 12.9716,
-      lng: Number(apiJob.longitude) || 77.5946,
-    },
+    coordinates: safeCoords,
+    hasValidCoordinates,
     category: (apiJob.category || 'Retail') as any,
     workType: 'part_time',
     paymentAmount: salaryVal,
@@ -316,6 +343,13 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     try {
+      const jobCity = jobData.city || jobData.locality || 'Bengaluru';
+      const parsedCoords = extractJobCoordinates({
+        lat: jobData.coordinates?.lat ?? jobData.latitude,
+        lng: jobData.coordinates?.lng ?? jobData.longitude,
+      });
+      const safeCoords = parsedCoords || getCityCoordinates(jobCity);
+
       const res = await api.postJob({
         employerId: user.employerData?.id || user.id,
         title: jobData.title,
@@ -326,13 +360,14 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         date: jobData.date || jobData.startDate || 'Flexible',
         startTime: jobData.startTime || '05:00 PM',
         endTime: jobData.endTime || '09:00 PM',
-        address: jobData.address || jobData.businessAddress || `${jobData.city || 'Bengaluru'}, Karnataka`,
-        locality: jobData.locality || jobData.city || 'Bengaluru',
-        city: jobData.city || jobData.locality || 'Bengaluru',
-        latitude: jobData.coordinates?.lat || jobData.latitude,
-        longitude: jobData.coordinates?.lng || jobData.longitude,
+        address: jobData.address || jobData.businessAddress || `${jobCity}, Karnataka`,
+        locality: jobData.locality || jobCity,
+        city: jobCity,
+        latitude: safeCoords.lat,
+        longitude: safeCoords.lng,
         numberOfWorkers: jobData.workersNeeded || jobData.numberOfWorkers || 1,
         photoUrl: jobData.workplacePhotos?.[0] || jobData.workplaceImages?.[0] || jobData.photoUrl || '',
+        employerPhone: jobData.employerPhone || user.phone || user.employerData?.phone || '',
         responsibilities: jobData.responsibilities || [],
         requiredSkills: jobData.requiredSkills || [],
       });
@@ -442,23 +477,27 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Filtered and sorted jobs
   const filteredJobs = useMemo(() => {
     // Current reference coordinate (city center or default)
-    const refCoords = CITY_COORDINATES[filters.city] || CITY_COORDINATES['Bengaluru'] || { lat: 12.9716, lng: 77.5946 };
+    const refCoords = getCityCoordinates(filters.city);
 
     // 1. Attach distance safely
     const withDistance = (jobs || [])
       .filter((j): j is JobListing => Boolean(j && j.id))
       .map(job => {
-        const jLat = job.coordinates?.lat ?? 12.9716;
-        const jLng = job.coordinates?.lng ?? 77.5946;
-        const dist = calculateDistanceKm(
-          refCoords.lat,
-          refCoords.lng,
-          jLat,
-          jLng
-        );
+        const coords = extractJobCoordinates(job.coordinates);
+        const hasValidCoordinates = coords !== null;
+        let dist: number | undefined = undefined;
+        if (hasValidCoordinates && coords) {
+          dist = calculateDistanceKm(
+            refCoords.lat,
+            refCoords.lng,
+            coords.lat,
+            coords.lng
+          );
+        }
         return {
           ...job,
-          coordinates: job.coordinates || { lat: jLat, lng: jLng },
+          hasValidCoordinates,
+          coordinates: coords || (job.coordinates ? job.coordinates : { lat: 0, lng: 0 }),
           distanceKm: dist,
         };
       });
@@ -541,9 +580,9 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return false;
       }
 
-      // Distance
+      // Distance - only filter by distance if job has valid coordinates/distance
       if (filters.maxDistanceKm && filters.maxDistanceKm < 15) {
-        if ((job.distanceKm ?? 99) > filters.maxDistanceKm) {
+        if (typeof job.distanceKm !== 'number' || job.distanceKm > filters.maxDistanceKm) {
           return false;
         }
       }
@@ -575,10 +614,16 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return b.paymentAmount - a.paymentAmount;
         case 'lowest_pay':
           return a.paymentAmount - b.paymentAmount;
-        case 'nearest':
-          return (a.distanceKm ?? 999) - (b.distanceKm ?? 999);
-        case 'farthest':
-          return (b.distanceKm ?? 0) - (a.distanceKm ?? 0);
+        case 'nearest': {
+          const distA = typeof a.distanceKm === 'number' ? a.distanceKm : 99999;
+          const distB = typeof b.distanceKm === 'number' ? b.distanceKm : 99999;
+          return distA - distB;
+        }
+        case 'farthest': {
+          const distA = typeof a.distanceKm === 'number' ? a.distanceKm : -1;
+          const distB = typeof b.distanceKm === 'number' ? b.distanceKm : -1;
+          return distB - distA;
+        }
         case 'newest': {
           const dateA = a.id || '';
           const dateB = b.id || '';
@@ -591,7 +636,9 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (a.isVerifiedBusiness !== b.isVerifiedBusiness) {
               return a.isVerifiedBusiness ? -1 : 1;
             }
-            return (a.distanceKm ?? 99) - (b.distanceKm ?? 99);
+            const distA = typeof a.distanceKm === 'number' ? a.distanceKm : 99999;
+            const distB = typeof b.distanceKm === 'number' ? b.distanceKm : 99999;
+            return distA - distB;
           }
           // Calculate search relevance score
           const score = (j: JobListing) => {
